@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .data {
+      font-size: 1.5em;
+      margin: 15px 0;
+    }
+    .timestamp {
+      font-size: 0.9em;
+      color: #888;
+      margin-bottom: 20px;
+    }
+    canvas {
+      margin-top: 20px;
+    }
+    .refresh {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .refresh:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sensor Dashboard</h1>
+    <div class="data">🌡️ Temperature: <span id="temp">--</span> °C</div>
+    <div class="data">💧 Humidity: <span id="hum">--</span> %</div>
+    <div class="timestamp" id="timestamp">Last updated: --</div>
+    <button class="refresh" onclick="fetchData()">Refresh</button>
+
+    <canvas id="tempChart" width="400" height="200"></canvas>
+    <canvas id="humChart" width="400" height="200"></canvas>
+  </div>
+
+  <script>
+    let tempChart, humChart;
+
+    function createCharts() {
+      const tempCtx = document.getElementById('tempChart').getContext('2d');
+      const humCtx = document.getElementById('humChart').getContext('2d');
+
+      tempChart = new Chart(tempCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: [],
+            borderColor: 'rgba(255,99,132,1)',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: { title: { display: true, text: '°C' }, beginAtZero: false }
+          }
+        }
+      });
+
+      humChart = new Chart(humCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Humidity (%)',
+            data: [],
+            borderColor: 'rgba(54,162,235,1)',
+            backgroundColor: 'rgba(54,162,235,0.2)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: { title: { display: true, text: '%' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    async function fetchData() {
+      try {
+        const response = await fetch("https://api.thingspeak.com/channels/2957437/feeds.json?api_key=J29P9QJZ0YBBEHRS&results=10");
+        const json = await response.json();
+        const feeds = json.feeds;
+
+        const tempValues = feeds.map(f => parseFloat(f.field1));
+        const humValues = feeds.map(f => parseFloat(f.field2));
+        const timestamps = feeds.map(f => new Date(f.created_at).toLocaleTimeString());
+
+        const latest = feeds[feeds.length - 1];
+        document.getElementById("temp").innerText = latest.field1 || "--";
+        document.getElementById("hum").innerText = latest.field2 || "--";
+        document.getElementById("timestamp").innerText = "Last updated: " + new Date(latest.created_at).toLocaleString();
+
+        // Update charts
+        tempChart.data.labels = timestamps;
+        tempChart.data.datasets[0].data = tempValues;
+        tempChart.update();
+
+        humChart.data.labels = timestamps;
+        humChart.data.datasets[0].data = humValues;
+        humChart.update();
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    // Initialize
+    createCharts();
+    fetchData();
+    setInterval(fetchData, 5000);
+  </script>
+</body>
+</html>
