@@ -59,113 +59,11 @@
     <div class="timestamp" id="timestamp">Last updated: --</div>
     <button class="refresh" onclick="fetchData()">Refresh</button>
 
-    <canvas id="tempChart" width="600" height="300"></canvas>
-    <canvas id="humChart" width="600" height="300"></canvas>
+    <canvas id="tempChart" width="400" height="200"></canvas>
+    <canvas id="humChart" width="400" height="200"></canvas>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const channelID = 2957437;
-    const apiKey = "J29P9QJZ0YBBEHRS";
-    const maxResults = 8000; // Enough to cover a full day
-
-    const tempCtx = document.getElementById('tempChart').getContext('2d');
-    const humCtx = document.getElementById('humChart').getContext('2d');
-
-    const tempChart = new Chart(tempCtx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'Temperature (°C)', data: [], borderColor: 'red', fill: false }] },
-        options: {
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute',
-                        displayFormats: { minute: 'HH:mm' },
-                    },
-                    min: new Date().setHours(0, 0, 0, 0),
-                    max: new Date(),
-                    title: { display: true, text: 'Time' }
-                },
-                y: { title: { display: true, text: 'Temperature (°C)' } }
-            }
-        }
-    });
-
-    const humChart = new Chart(humCtx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'Humidity (%)', data: [], borderColor: 'blue', fill: false }] },
-        options: {
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute',
-                        displayFormats: { minute: 'HH:mm' },
-                    },
-                    min: new Date().setHours(0, 0, 0, 0),
-                    max: new Date(),
-                    title: { display: true, text: 'Time' }
-                },
-                y: { title: { display: true, text: 'Humidity (%)' } }
-            }
-        }
-    });
-
-    function updateCharts() {
-        fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=${maxResults}`)
-            .then(res => res.json())
-            .then(data => {
-                const feeds = data.feeds;
-                const labels = [];
-                const temps = [];
-                const hums = [];
-
-                // feeds.forEach(feed => {
-                //     const time = new Date(feed.created_at);
-                //     if (time.toDateString() === new Date().toDateString()) {
-                //         labels.push(time);
-                //         temps.push(parseFloat(feed.field1));
-                //         hums.push(parseFloat(feed.field2));
-                //     }
-                // });
-feeds.forEach(feed => {
-    const utcDate = new Date(feed.created_at);
-    const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
-
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    if (localDate >= startOfDay && localDate <= now) {
-        labels.push(localDate);
-        temps.push(parseFloat(feed.field1));
-        hums.push(parseFloat(feed.field2));
-    }
-});
-                tempChart.data.labels = labels;
-                tempChart.data.datasets[0].data = temps;
-                humChart.data.labels = labels;
-                humChart.data.datasets[0].data = hums;
-
-                // Update chart bounds
-                const now = new Date();
-                tempChart.options.scales.x.min = new Date().setHours(0, 0, 0, 0);
-                tempChart.options.scales.x.max = now;
-                humChart.options.scales.x.min = new Date().setHours(0, 0, 0, 0);
-                humChart.options.scales.x.max = now;
-
-                tempChart.update();
-                humChart.update();
-            })
-            .catch(err => console.error("Chart Update Error:", err));
-    }
-
-    setInterval(updateCharts, 5000); // Auto-refresh every 5 seconds
-    window.onload = updateCharts;
-</script>
-
-
-<!--   <script>
+  <script>
     let tempChart, humChart;
 
     function createCharts() {
@@ -247,6 +145,6 @@ feeds.forEach(feed => {
     createCharts();
     fetchData();
     setInterval(fetchData, 5000);
-  </script> -->
+  </script>
 </body>
 </html>
