@@ -121,15 +121,27 @@
                 const temps = [];
                 const hums = [];
 
-                feeds.forEach(feed => {
-                    const time = new Date(feed.created_at);
-                    if (time.toDateString() === new Date().toDateString()) {
-                        labels.push(time);
-                        temps.push(parseFloat(feed.field1));
-                        hums.push(parseFloat(feed.field2));
-                    }
-                });
+                // feeds.forEach(feed => {
+                //     const time = new Date(feed.created_at);
+                //     if (time.toDateString() === new Date().toDateString()) {
+                //         labels.push(time);
+                //         temps.push(parseFloat(feed.field1));
+                //         hums.push(parseFloat(feed.field2));
+                //     }
+                // });
+feeds.forEach(feed => {
+    const utcDate = new Date(feed.created_at);
+    const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
 
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (localDate >= startOfDay && localDate <= now) {
+        labels.push(localDate);
+        temps.push(parseFloat(feed.field1));
+        hums.push(parseFloat(feed.field2));
+    }
+});
                 tempChart.data.labels = labels;
                 tempChart.data.datasets[0].data = temps;
                 humChart.data.labels = labels;
